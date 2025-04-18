@@ -1,5 +1,5 @@
 import tkinter as tk
-from gui_manager import GUIManager
+from pdf_manager.gui.gui_manager import GUIManager
 
 if __name__ == "__main__":
     root = tk.Tk()
