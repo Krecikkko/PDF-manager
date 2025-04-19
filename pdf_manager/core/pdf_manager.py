@@ -63,6 +63,17 @@ class PDFManager:
         with open(output_file, "wb") as f:
             writer.write(f)
 
+    def remove_password(self, input_file, password):
+        reader = PdfReader(input_file)
+        if reader.is_encrypted:
+            reader.decrypt(password)
+        writer = PdfWriter()
+        for page in reader.pages:
+            writer.add_page(page)
+        output_file = input_file.replace(".pdf", "_decrypted.pdf")
+        with open(output_file, "wb") as f:
+            writer.write(f)
+
     @staticmethod
     def parse_page_ranges(page_range_str):
         """Parse a page range string like '1-3,5-7' into a list of page ranges."""

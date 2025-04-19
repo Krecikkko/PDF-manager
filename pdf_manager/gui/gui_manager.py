@@ -47,6 +47,7 @@ class GUIManager:
         protect_tab = ttk.Frame(tab_control)
         tab_control.add(protect_tab, text="Protect")
         tk.Button(protect_tab, text="Protect with password", command=self.password_protect).pack(pady=10)
+        tk.Button(protect_tab, text="Remove password", command=self.remove_password).pack(pady=10)
 
     def select_files(self):
         """Open file dialog to select PDF files."""
@@ -182,3 +183,23 @@ class GUIManager:
             messagebox.showinfo("Success", f"Files protected with password created in the same directory.")
         except Exception as e:
             messagebox.showerror("Error", f"An error occurred: {e}")
+
+    def remove_password(self):
+        """Handle removing password from a PDF."""
+        if not self.pdf_manager.files:
+            messagebox.showwarning("No File", "Please select a PDF file to remove password.")
+            return
+
+        input_files = self.pdf_manager.files
+
+        password = askstring("Enter password", "Enter current password:")
+        if not password:
+            return
+
+        try:
+            for input_file in input_files:
+                self.pdf_manager.remove_password(input_file, password)
+            messagebox.showinfo("Success", f"Decrypted PDF(s) saved in the same directory.")
+        except Exception as e:
+            messagebox.showerror("Error", f"An error occurred: {e}")
+
