@@ -1,4 +1,5 @@
 import tkinter as tk
+import os
 from tkinter import filedialog, messagebox, ttk
 from tkinter.simpledialog import askstring
 from pdf_manager.core.pdf_manager import PDFManager
@@ -7,8 +8,16 @@ class GUIManager:
     def __init__(self, root):
         self.root = root
         self.pdf_manager = PDFManager()
+        self.file_list = [] # File list for storing selected by user files
+        self.context_menu = tk.Menu(self.root, tearoff=0)
 
         self.root.title("PDF Manager")
+
+        # Load icon
+        icon_path = os.path.join("assets", "icon.ico")
+        if os.path.exists(icon_path):
+            root.iconbitmap(icon_path)
+
         self.create_widgets()
 
     def create_widgets(self):
@@ -39,15 +48,32 @@ class GUIManager:
         # Extract Tab
         extract_tab = ttk.Frame(tab_control)
         tab_control.add(extract_tab, text="Extract")
-        tk.Button(extract_tab, text="Extract PDF", command=self.extract_pdf).pack(pady=5)
-        tk.Button(extract_tab, text="Extract text", command=self.extract_txt).pack(pady=5)
-        tk.Button(extract_tab, text="Extract images", command=self.extract_img).pack(pady=5)
+
+        # Button frame to place buttons horizontally
+        extract_button_frame = tk.Frame(extract_tab)
+        extract_button_frame.pack(pady=10)
+
+        tk.Button(extract_button_frame, text="Extract PDF", command=self.extract_pdf).pack(side=tk.LEFT, padx=5)
+        tk.Button(extract_button_frame, text="Extract text", command=self.extract_txt).pack(side=tk.LEFT, padx=5)
+        tk.Button(extract_button_frame, text="Extract images", command=self.extract_img).pack(side=tk.LEFT, padx=5)
 
         # Protect Tab
         protect_tab = ttk.Frame(tab_control)
         tab_control.add(protect_tab, text="Protect")
-        tk.Button(protect_tab, text="Protect with password", command=self.password_protect).pack(pady=10)
-        tk.Button(protect_tab, text="Remove password", command=self.remove_password).pack(pady=10)
+
+        # Button frame to place buttons horizontally
+        protect_button_frame = tk.Frame(protect_tab)
+        protect_button_frame.pack(pady=10)
+
+        tk.Button(protect_button_frame, text="Protect with password", command=self.password_protect).pack(side=tk.LEFT,
+                                                                                                          padx=5)
+        tk.Button(protect_button_frame, text="Remove password", command=self.remove_password).pack(side=tk.LEFT,
+                                                                                                   padx=5)
+
+        # Context menu with an option to remove an added PDF file to the list
+        self.file_list.bind("<Button-3>", self.show_context_menu)
+
+        self.context_menu.add_command(label="Remove", command=self.remove_selected_file)
 
     def select_files(self):
         """Open file dialog to select PDF files."""
@@ -203,3 +229,22 @@ class GUIManager:
         except Exception as e:
             messagebox.showerror("Error", f"An error occurred: {e}")
 
+
+    def show_context_menu(self, event):
+        """Show a context menu on right-click."""
+        try:
+            index = self.file_list.nearest(event.y)
+            self.file_list.selection_clear(0, tk.END)
+            self.file_list.selection_set(index)
+            self.file_list.activate(index)
+            self.context_menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            self.context_menu.grab_release()
+
+    def remove_selected_file(self):
+        """Remove a selected file from listbox and internal file list."""
+        selected_index = self.file_list.curselection()
+        if selected_index:
+            index = selected_index[0]
+            self.file_list.delete(index)
+            del self.pdf_manager.files[index]
