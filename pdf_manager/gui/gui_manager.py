@@ -19,6 +19,7 @@ class GUIManager:
             root.iconbitmap(icon_path)
 
         self.create_widgets()
+        self.update_buttons_state()
 
     def create_widgets(self):
         frame = tk.Frame(self.root)
@@ -28,8 +29,23 @@ class GUIManager:
         self.file_list = tk.Listbox(frame, width=70, height=5)
         self.file_list.pack(pady=5)
 
-        select_btn = tk.Button(frame, text="Select PDF Files", command=self.select_files)
-        select_btn.pack(pady=5)
+        # Horizontal frame for the main buttons
+        button_frame = tk.Frame(frame)
+        button_frame.pack(pady=5)
+
+        # Original and sample buttons
+        tk.Button(button_frame, text="Select PDF Files", command=self.select_files).pack(side=tk.LEFT, padx=5)
+        self.move_up_button = tk.Button(button_frame, text="Move up", command=self.move_up_selected_file)
+        self.move_up_button.pack(side=tk.LEFT, padx=5)
+
+        self.move_down_button = tk.Button(button_frame, text="Move down", command=self.move_down_selected_file)
+        self.move_down_button.pack(side=tk.LEFT, padx=5)
+
+        self.remove_button = tk.Button(button_frame, text="Remove", command=self.remove_selected_file)
+        self.remove_button.pack(side=tk.LEFT, padx=5)
+
+        # Track selection
+        self.file_list.bind("<<ListboxSelect>>", self.update_buttons_state)
 
         # Notebook for operations
         tab_control = ttk.Notebook(self.root)
@@ -70,19 +86,15 @@ class GUIManager:
         tk.Button(protect_button_frame, text="Remove password", command=self.remove_password).pack(side=tk.LEFT,
                                                                                                    padx=5)
 
-        # Context menu with an option to remove an added PDF file to the list
-        self.file_list.bind("<Button-3>", self.show_context_menu)
-
-        self.context_menu.add_command(label="Remove", command=self.remove_selected_file)
-
     def select_files(self):
-        """Open file dialog to select PDF files."""
+        """Open the file dialog to select PDF files."""
         files = filedialog.askopenfilenames(filetypes=[("PDF Files", "*.pdf")])
         if files:
             self.pdf_manager.files = list(files)
             self.file_list.delete(0, tk.END)  # Clear previous entries
             for file in files:
                 self.file_list.insert(tk.END, file)
+        self.update_buttons_state()
 
     def merge_pdfs(self):
         """Handle merging of PDFs."""
@@ -248,3 +260,44 @@ class GUIManager:
             index = selected_index[0]
             self.file_list.delete(index)
             del self.pdf_manager.files[index]
+        self.update_buttons_state()
+
+    def move_up_selected_file(self):
+        """Move a selected file up in the list."""
+        selected_index = self.file_list.curselection()
+        if selected_index:
+            index = selected_index[0]
+            if index > 0:
+                # Swap in the listbox
+                item = self.file_list.get(index)
+                self.file_list.delete(index)
+                self.file_list.insert(index - 1, item)
+                self.file_list.select_set(index - 1)
+
+                # Swap in the internal file list
+                self.pdf_manager.files[index], self.pdf_manager.files[index - 1] = \
+                    self.pdf_manager.files[index - 1], self.pdf_manager.files[index]
+
+    def move_down_selected_file(self):
+        """Move a selected file down in the list."""
+        selected_index = self.file_list.curselection()
+        if selected_index:
+            index = selected_index[0]
+            if index < self.file_list.size() - 1:
+                # Swap in the listbox
+                item = self.file_list.get(index)
+                self.file_list.delete(index)
+                self.file_list.insert(index + 1, item)
+                self.file_list.select_set(index + 1)
+
+                # Swap in the internal file list
+                self.pdf_manager.files[index], self.pdf_manager.files[index + 1] = \
+                    self.pdf_manager.files[index + 1], self.pdf_manager.files[index]
+
+    def update_buttons_state(self, event=None):
+        """Enable or disable buttons based on selection."""
+        selected = bool(self.file_list.curselection())
+        state = tk.NORMAL if selected else tk.DISABLED
+        self.move_up_button.config(state=state)
+        self.move_down_button.config(state=state)
+        self.remove_button.config(state=state)
