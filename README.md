@@ -16,6 +16,6 @@ PDF Manager is a simple desktop application built with Python and Tkinter that p
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-username/pdf-manager.git
+   git clone https://github.com/Krecikkko/PDF-manager.git
    cd pdf-manager
    
